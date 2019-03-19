@@ -21,7 +21,6 @@ using std::numeric_limits;
 /* Things one could add if one cared enough
    - Input validation
    - Differentiate partition available space and total size
-   - Actually store job objects in partitions instead of just tracking size
    - Partition and job randomizer for testing
    - Compare execution times between algorithms
    - User defined job names with duplicates allowed
@@ -76,7 +75,7 @@ int main() {
   do {
     candidate.second = -1;
     for (int i = 0; i < jobs.size(); i++) {
-      for (int j = 0; j < partition_count; j++) {
+      for (int j = 0; j < partitions.size(); j++) {
         int difference = partitions[j].size - jobs[i].size;
         if (difference > -1 && difference < current_best) {
           current_best = partitions[j].size - jobs[i].size;
@@ -85,7 +84,7 @@ int main() {
         }
       }
     }
-
+    cout << "Candidate is " << "<" << candidate.first << ", " << candidate.second << ">" << endl;
     // Move candidate from jobs list to selected partition
     name = candidate.first;
     vector<job>::iterator it = find_if(jobs.begin(), jobs.end(), [&name](job& object) {
@@ -93,7 +92,7 @@ int main() {
     });
     if (it != jobs.end()) {
       partitions[candidate.second].size -= it->size;
-      move(it, jobs.end(), back_inserter(partitions[candidate.second].partitioned_jobs));
+      partitions[candidate.second].partitioned_jobs.push_back(*it);
       jobs.erase(it);
     } else {
       cout << "Candidate was not found" << endl;
