@@ -1,21 +1,4 @@
-#include <vector>
-#include <string>
-#include <iostream>
-#include <utility>
-#include <limits>
-#include <algorithm>
-#include <stdlib.h>
-
-using std::vector;
-using std::find;
-using std::move;
-using std::string;
-using std::to_string;
-using std::cout;
-using std::cin;
-using std::endl;
-using std::pair;
-using std::numeric_limits;
+#include "Engine.h"
 
 /* Things one could add if one cared enough
    - Input validation
@@ -25,23 +8,12 @@ using std::numeric_limits;
    -
 */
 
-struct job {
-  string name = "Default";
-  string status = "Wait";
-  int size = 0;
-};
+Engine::Engine() {
 
-struct partition {
-  int size = 0;
-  int space = 0;
-  vector<job> partitioned_jobs;
-};
+}
 
-int main() {
-
-  int partition_count, job_count;
-  vector <partition> partitions;
-  vector <job> jobs;
+// Take user input for partition and job counts and their sizes
+void Engine::input() {
 
   cout << "Enter number of partitions" << endl;
   cin >> partition_count;
@@ -62,13 +34,16 @@ int main() {
     cout << "Enter a memory requirement for " << jobs[i].name << endl;
     cin >> jobs[i].size;
   }
+}
 
-  // Augmented Best-Fit finds best fit among all jobs instead of best fit for current job
+// Augmented Best-Fit finds best fit among all jobs instead of best fit for current job
+// Multiple jobs per partition are allowed
+void Engine::augmentedBestFit() {
+
   cout << "Running Augmented Best-Fit Algorithm" << endl;
 
-  vector <job> jobs_copy = jobs;
   int current_best = numeric_limits<int>::max();
-  pair<string, int> candidate; // <job, partition>
+  pair<string, int> candidate; // <job name, partition index>
 
   // Find the current best fit candidate and place it into selected partition
   do {
@@ -99,8 +74,39 @@ int main() {
 
     current_best = numeric_limits<int>::max();
   } while (jobs.size() > 0 && candidate.second != -1);
+}
 
-  // Show algorithm results
+// Next fit allocation with circular loop and no job limit for partitions
+void Engine::nextFit() {
+
+  int last = 0;
+
+	for (unsigned int i = 0; i < jobs_size; i++) {
+    int counter = 0;
+    int j = last;
+    bool allocated = false;
+    while (counter != partitions.size() && allocated == false) {
+      // Check against partition.allocated.size() if a job limit is desired
+      if (partitions[j].space >= jobs[i].size) {
+        partitions[j].space -= jobs[i].size;
+        // *** Need to find a good way to move elements without disturbing loops ***
+        allocated = true;
+      }
+      j++;
+      if (j < partitions.size()) {
+        last = j;
+      } else {
+        last = 0;
+        j = 0;
+      }
+      counter++;
+    }
+	}
+}
+
+// Show algorithm results
+void Engine::output() {
+
   cout << "\nResults: " << endl;
   for (int i = 0; i < partitions.size(); i++) {
     cout << "Partition " << i + 1 << ": " << partitions[i].space << " / " << partitions[i].size << " space available" << endl;
@@ -111,10 +117,8 @@ int main() {
     cout << endl;
   }
 
-  cout << "\nUnassigned Jobs:\n";
+  cout << "\nUnallocated Jobs:\n";
   for (int i = 0; i < jobs.size(); i++) {
     cout << "<" << jobs[i].name << ", " << jobs[i].size << ">" << endl;
   }
-
-  return 0;
 }
