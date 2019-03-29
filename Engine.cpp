@@ -1,5 +1,7 @@
 #include "Engine.h"
 
+// Partitions have no job limit
+
 /* Things one could add if one cared enough
    - Input validation
    - Partition and job randomizer for testing
@@ -37,7 +39,6 @@ void Engine::input() {
 }
 
 // Augmented Best-Fit finds best fit among all jobs instead of best fit for current job
-// Multiple jobs per partition are allowed
 void Engine::augmentedBestFit() {
 
   cout << "Running Augmented Best-Fit Algorithm" << endl;
@@ -53,8 +54,9 @@ void Engine::augmentedBestFit() {
         int difference = partitions[j].space - jobs[i].size;
         if (difference > -1 && difference < current_best) {
           current_best = difference;
-          candidate.first = jobs[i].name;
-          candidate.second = j;
+          candidate = make_pair(jobs[i].name, j);
+          //candidate.first = jobs[i].name;
+          //candidate.second = j;
         }
       }
     }
@@ -76,12 +78,16 @@ void Engine::augmentedBestFit() {
   } while (jobs.size() > 0 && candidate.second != -1);
 }
 
-// Next fit allocation with circular loop and no job limit for partitions
+// Modified Next-Fit starts new loops at current position, not next, because
+//   partitions have no job limit
 void Engine::nextFit() {
 
-  int last = 0;
+  cout << "Running Modified Next-Fit Algorithm" << endl;
 
-	for (unsigned int i = 0; i < jobs_size; i++) {
+  int last = 0;
+  vector <pair <string, int>>  candidates;
+
+	for (unsigned int i = 0; i < jobs.size(); i) {
     int counter = 0;
     int j = last;
     bool allocated = false;
@@ -89,7 +95,9 @@ void Engine::nextFit() {
       // Check against partition.allocated.size() if a job limit is desired
       if (partitions[j].space >= jobs[i].size) {
         partitions[j].space -= jobs[i].size;
-        // *** Need to find a good way to move elements without disturbing loops ***
+        vector<job>::iterator it = jobs.begin() + i;
+        partitions[j].partitioned_jobs.push_back(*it);
+        jobs.erase(it);
         allocated = true;
       }
       j++;
@@ -100,6 +108,9 @@ void Engine::nextFit() {
         j = 0;
       }
       counter++;
+    }
+    if (allocated == false) {
+      i++;
     }
 	}
 }
